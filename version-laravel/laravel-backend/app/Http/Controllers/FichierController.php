@@ -48,21 +48,21 @@ class FichierController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'cne' => 'required|string',
-            'nom' => 'required|string',
-            'prenom' => 'required|string',
-            'note1' => 'nullable|string',
-            'note2' => 'nullable|string',
-            'note3' => 'nullable|string',
+            'cne' => 'required|string|max:50',
+            'nom' => 'required|string|max:50',
+            'prenom' => 'required|string|max:50',
+            'note1' => 'nullable|numeric|between:0,20',
+            'note2' => 'nullable|numeric|between:0,20',
+            'note3' => 'nullable|numeric|between:0,20',
         ]);
 
         $this->ensureFile();
 
         $line = sprintf(
             "%s|%s|%s|%s|%s|%s\n",
-            $request->cne,
-            $request->nom,
-            $request->prenom,
+            trim($request->cne),
+            trim($request->nom),
+            trim($request->prenom),
             $request->note1 ?? '0',
             $request->note2 ?? '0',
             $request->note3 ?? '0'
@@ -76,18 +76,18 @@ class FichierController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'index' => 'required|integer',
-            'cne' => 'required|string',
-            'nom' => 'required|string',
-            'prenom' => 'required|string',
-            'note1' => 'nullable|string',
-            'note2' => 'nullable|string',
-            'note3' => 'nullable|string',
+            'index' => 'required|integer|min:0',
+            'cne' => 'required|string|max:50',
+            'nom' => 'required|string|max:50',
+            'prenom' => 'required|string|max:50',
+            'note1' => 'nullable|numeric|between:0,20',
+            'note2' => 'nullable|numeric|between:0,20',
+            'note3' => 'nullable|numeric|between:0,20',
         ]);
 
         $this->ensureFile();
         $content = Storage::disk('local')->get(self::FILE_NAME);
-        $lines = explode("\n", $content);
+        $lines = array_filter(explode("\n", $content), fn($line) => trim($line) !== '');
 
         $idx = $request->index;
         if ($idx < 0 || $idx >= count($lines)) {
@@ -96,15 +96,15 @@ class FichierController extends Controller
 
         $lines[$idx] = sprintf(
             "%s|%s|%s|%s|%s|%s",
-            $request->cne,
-            $request->nom,
-            $request->prenom,
+            trim($request->cne),
+            trim($request->nom),
+            trim($request->prenom),
             $request->note1 ?? '0',
             $request->note2 ?? '0',
             $request->note3 ?? '0'
         );
 
-        Storage::disk('local')->put(self::FILE_NAME, implode("\n", $lines));
+        Storage::disk('local')->put(self::FILE_NAME, implode("\n", $lines) . "\n");
 
         return response()->json(['success' => true]);
     }

@@ -18,16 +18,25 @@ export default function AboutPage() {
   useEffect(() => {
     fetch('/api/etudiants/me')
       .then(res => res.json())
-      .then(data => setStudent(data));
+      .then(data => setStudent(data))
+      .catch(err => console.error('Error fetching student:', err));
+  }, []);
+
+  // Load photo AFTER student is set
+  useEffect(() => {
+    if (!student?.id) return;
+
     fetch('/api/images')
       .then(res => res.json())
       .then(data => {
-        const profileImage = data.find(img => img.name === 'profile_' + student?.id);
+        const profileImage = data.find(img => img.name === `profile_${student.id}`);
         if (profileImage) {
-          setPhoto(`data:${profileImage.type};base64,${profileImage.base64}`);
+          // Use dataUrl if available, fallback to manual construction
+          setPhoto(profileImage.dataUrl || `data:image/${profileImage.type};base64,${profileImage.base64}`);
         }
-      });
-  }, []);
+      })
+      .catch(err => console.error('Error fetching images:', err));
+  }, [student?.id]);
 
   useEffect(() => {
     if (student && mapRef.current && !mapInstanceRef.current) {
@@ -53,18 +62,25 @@ export default function AboutPage() {
     if (!file || !student) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('name', `profile_${student.id}`);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('name', `profile_${student.id}`);
 
-    await fetch('/api/images', { method: 'POST', body: formData });
-    const res = await fetch('/api/images');
-    const data = await res.json();
-    const profileImage = data.find(img => img.name === `profile_${student.id}`);
-    if (profileImage) {
-      setPhoto(`data:${profileImage.type};base64,${profileImage.base64}`);
+      await fetch('/api/images', { method: 'POST', body: formData });
+      
+      // Refresh images list
+      const res = await fetch('/api/images');
+      const data = await res.json();
+      const profileImage = data.find(img => img.name === `profile_${student.id}`);
+      if (profileImage) {
+        setPhoto(profileImage.dataUrl || `data:image/${profileImage.type};base64,${profileImage.base64}`);
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   }
 
   if (!student) {

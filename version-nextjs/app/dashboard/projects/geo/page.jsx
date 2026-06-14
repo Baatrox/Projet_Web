@@ -12,23 +12,44 @@ export default function GeoPage() {
     fetch('/api/etudiants')
       .then(res => res.json())
       .then(data => {
-        setStudents(data.filter(s => s.longitude && s.latitude));
+        // Filter students with valid coordinates (not null/undefined)
+        setStudents(data.filter(s => s.longitude !== null && s.longitude !== undefined && s.latitude !== null && s.latitude !== undefined));
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(err => {
+        console.error('Error fetching students:', err);
+        setLoading(false);
+      });
 
     fetch('/api/etudiants/me')
       .then(res => res.json())
-      .then(data => setCurrentId(data.id));
+      .then(data => setCurrentId(data.id))
+      .catch(err => console.error('Error fetching current student:', err));
   }, []);
 
   async function handlePositionUpdate(lat, lng) {
-    await fetch(`/api/etudiants/${currentId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ latitude: lat, longitude: lng }),
-    });
-    alert('Position mise à jour avec succès !');
+    try {
+      const res = await fetch(`/api/etudiants/${currentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      });
+      
+      if (!res.ok) {
+        alert('Erreur lors de la mise à jour de la position');
+        return;
+      }
+      
+      // Refresh the students list
+      const response = await fetch('/api/etudiants');
+      const data = await response.json();
+      setStudents(data.filter(s => s.longitude !== null && s.longitude !== undefined && s.latitude !== null && s.latitude !== undefined));
+      
+      alert('Position mise à jour avec succès !');
+    } catch (error) {
+      console.error('Error updating position:', error);
+      alert('Erreur lors de la mise à jour');
+    }
   }
 
   if (loading) {

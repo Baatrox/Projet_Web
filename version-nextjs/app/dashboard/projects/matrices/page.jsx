@@ -43,10 +43,18 @@ export default function MatricesPage() {
   const [resultProd, setResultProd] = useState('');
 
   function handleGenerate1() {
+    if (m1Rows <= 0 || m1Cols <= 0) {
+      alert('Dimensions invalides: nombres de lignes et colonnes doivent être > 0');
+      return;
+    }
     setMat1(generateMatrix(m1Rows, m1Cols));
   }
 
   function handleGenerate2() {
+    if (m2Rows <= 0 || m2Cols <= 0) {
+      alert('Dimensions invalides: nombres de lignes et colonnes doivent être > 0');
+      return;
+    }
     setMat2(generateMatrix(m2Rows, m2Cols));
   }
 

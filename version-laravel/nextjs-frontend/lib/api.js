@@ -18,17 +18,36 @@ export async function apiRequest(path, options = {}) {
     delete headers['Content-Type'];
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...fetchOptions,
-    headers,
-  });
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      ...fetchOptions,
+      headers,
+    });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `Erreur ${res.status}`);
+    if (!res.ok) {
+      // Try to parse error response as JSON
+      let errorData = {};
+      try {
+        errorData = await res.json();
+      } catch {
+        // Fallback if response is not JSON
+      }
+      
+      const errorMessage = errorData.message || errorData.error || `Erreur ${res.status}`;
+      throw new Error(errorMessage);
+    }
+
+    // Handle empty responses
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return null;
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error(`API request failed for ${path}:`, error);
+    throw error;
   }
-
-  return res.json();
 }
 
 export function getToken() {

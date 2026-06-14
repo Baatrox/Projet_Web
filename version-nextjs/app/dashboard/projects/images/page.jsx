@@ -96,7 +96,7 @@ export default function ImagesPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {images.map(img => (
                 <div key={img.id} className="bg-bg rounded-lg overflow-hidden">
-                  <img src={`data:image/${img.type};base64,${img.base64}`} alt={img.name}
+                  <img src={img.dataUrl || `data:image/${img.type};base64,${img.base64}`} alt={img.name}
                     className="w-full h-40 object-cover" />
                   <div className="p-3">
                     <p className="text-xs font-medium text-text truncate">{img.name}</p>

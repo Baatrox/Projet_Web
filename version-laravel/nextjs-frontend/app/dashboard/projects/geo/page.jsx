@@ -10,13 +10,38 @@ export default function GeoPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiRequest('/etudiants').then(data => { setStudents(data.filter(s => s.longitude && s.latitude)); setLoading(false); });
-    apiRequest('/etudiants/me').then(data => setCurrentId(data.id));
+    apiRequest('/etudiants')
+      .then(data => {
+        // Filter students with valid coordinates (not null/undefined)
+        setStudents(data.filter(s => s.longitude !== null && s.longitude !== undefined && s.latitude !== null && s.latitude !== undefined));
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching students:', err);
+        setLoading(false);
+      });
+    apiRequest('/etudiants/me')
+      .then(data => setCurrentId(data.id))
+      .catch(err => console.error('Error fetching current student:', err));
   }, []);
 
   async function handlePositionUpdate(lat, lng) {
-    await apiRequest(`/etudiants/${currentId}`, { method: 'PUT', body: JSON.stringify({ latitude: lat, longitude: lng }) });
-    alert('Position mise à jour !');
+    try {
+      await apiRequest(`/etudiants/${currentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lng })
+      });
+      
+      // Refresh the students list
+      const data = await apiRequest('/etudiants');
+      setStudents(data.filter(s => s.longitude !== null && s.longitude !== undefined && s.latitude !== null && s.latitude !== undefined));
+      
+      alert('Position mise à jour avec succès !');
+    } catch (error) {
+      console.error('Error updating position:', error);
+      alert('Erreur lors de la mise à jour');
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full" /></div>;

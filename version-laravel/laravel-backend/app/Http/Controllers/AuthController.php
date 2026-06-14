@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Etudiant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -14,11 +15,9 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $etudiant = Etudiant::where('login', $request->login)
-            ->whereRaw('pass = SHA2(?, 256)', [$request->password])
-            ->first();
+        $etudiant = Etudiant::where('login', $request->login)->first();
 
-        if (!$etudiant) {
+        if (!$etudiant || !Hash::check($request->password, $etudiant->pass)) {
             return response()->json(['error' => 'Login ou mot de passe incorrect'], 401);
         }
 

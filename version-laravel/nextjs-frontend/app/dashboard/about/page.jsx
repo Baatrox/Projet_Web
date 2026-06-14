@@ -17,12 +17,25 @@ export default function AboutPage() {
   const mapInstanceRef = useRef(null);
 
   useEffect(() => {
-    apiRequest('/etudiants/me').then(data => setStudent(data));
-    apiRequest('/images').then(data => {
-      const profileImage = data.find(img => img.name === 'profile_' + student?.id);
-      if (profileImage) setPhoto(`data:${profileImage.type};base64,${profileImage.base64}`);
-    });
+    apiRequest('/etudiants/me')
+      .then(data => setStudent(data))
+      .catch(err => console.error('Error fetching student:', err));
   }, []);
+
+  // Load photo AFTER student is set
+  useEffect(() => {
+    if (!student?.id) return;
+
+    apiRequest('/images')
+      .then(data => {
+        const profileImage = data.find(img => img.name === `profile_${student.id}`);
+        if (profileImage) {
+          // Use dataUrl if available, fallback to manual construction
+          setPhoto(profileImage.dataUrl || `data:image/${profileImage.type};base64,${profileImage.base64}`);
+        }
+      })
+      .catch(err => console.error('Error fetching images:', err));
+  }, [student?.id]);
 
   useEffect(() => {
     if (student && mapRef.current && !mapInstanceRef.current) {
@@ -44,14 +57,23 @@ export default function AboutPage() {
     const file = e.target.files?.[0];
     if (!file || !student) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('name', `profile_${student.id}`);
-    await apiRequest('/images', { method: 'POST', body: formData });
-    const data = await apiRequest('/images');
-    const profileImage = data.find(img => img.name === `profile_${student.id}`);
-    if (profileImage) setPhoto(`data:${profileImage.type};base64,${profileImage.base64}`);
-    setUploading(false);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('name', `profile_${student.id}`);
+      await apiRequest('/images', { method: 'POST', body: formData });
+      
+      // Refresh images list
+      const data = await apiRequest('/images');
+      const profileImage = data.find(img => img.name === `profile_${student.id}`);
+      if (profileImage) {
+        setPhoto(profileImage.dataUrl || `data:image/${profileImage.type};base64,${profileImage.base64}`);
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (!student) {
