@@ -74,6 +74,7 @@ API available at [http://localhost:8000](http://localhost:8000)
 - `PUT /api/fichiers` — Update entry
 
 ### Quiz (protected)
+- `GET /api/quiz/{quiz}` — Get quiz questions
 - `POST /api/quiz/submit` — Submit quiz answers
 
 ## Useful Commands

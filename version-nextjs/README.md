@@ -22,7 +22,7 @@ Edit `.env.local` with your MySQL credentials:
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=root
-DB_PASS=PROGEEK2m!
+DB_PASS=your_mysql_password
 DB_NAME=master_rsi
 JWT_SECRET=your-secret-key-here
 ```
