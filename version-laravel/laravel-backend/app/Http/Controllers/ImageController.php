@@ -7,11 +7,20 @@ use Illuminate\Http\Request;
 
 class ImageController extends Controller
 {
+    private function normalizeImageName(?string $input, string $fallback = 'image'): string
+    {
+        $raw = pathinfo($input ?: $fallback, PATHINFO_FILENAME);
+        $raw = preg_replace('/[^a-zA-Z0-9_-]/', '_', $raw);
+        $raw = preg_replace('/_+/', '_', $raw);
+        $raw = trim($raw, '_');
+
+        return substr($raw ?: $fallback, 0, 20);
+    }
+
     public function index()
     {
         $images = Image::all();
         $result = $images->map(function ($img) {
-            // Map file extension to MIME type
             $mimeTypes = [
                 'jpg' => 'image/jpeg',
                 'jpeg' => 'image/jpeg',
@@ -20,7 +29,7 @@ class ImageController extends Controller
                 'webp' => 'image/webp',
             ];
             $mimeType = $mimeTypes[strtolower($img->type)] ?? 'application/octet-stream';
-            
+
             return [
                 'id' => $img->id,
                 'name' => $img->name,
@@ -40,7 +49,14 @@ class ImageController extends Controller
         ]);
 
         $file = $request->file('image');
-        $name = $request->input('name', $file->getClientOriginalName());
+        $name = $this->normalizeImageName(
+            $request->input('name', $file->getClientOriginalName())
+        );
+
+        // For profile photos, delete existing one first to avoid duplicates
+        if (str_starts_with($name, 'profile_')) {
+            Image::where('name', $name)->delete();
+        }
 
         $image = Image::create([
             'name' => $name,
@@ -49,7 +65,7 @@ class ImageController extends Controller
             'bin_img' => file_get_contents($file->getRealPath()),
         ]);
 
-        return response()->json(['success' => true, 'id' => $image->id]);
+        return response()->json(['success' => true, 'id' => $image->id, 'name' => $name]);
     }
 
     public function destroy($id)

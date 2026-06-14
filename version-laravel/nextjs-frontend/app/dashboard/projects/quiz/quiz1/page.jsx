@@ -1,25 +1,29 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import QuizForm from '@/components/QuizForm';
-
-const questions = [
-  {
-    question: 'Dans quel élément on met le code javascript ?',
-    options: [{ label: 'a', text: '<script>' }, { label: 'b', text: '<js>' }, { label: 'c', text: '<body>' }, { label: 'd', text: '<link>' }],
-    correct: 'a',
-  },
-  {
-    question: 'Quel attribut utiliser pour faire référence à un script javascript externe ?',
-    options: [{ label: 'a', text: 'src' }, { label: 'b', text: 'rel' }, { label: 'c', text: 'type' }, { label: 'd', text: 'href' }],
-    correct: 'a',
-  },
-  {
-    question: 'Comment afficher "hello" sur un message alert ?',
-    options: [{ label: 'a', text: 'msg("hello")' }, { label: 'b', text: 'alertbox("hello")' }, { label: 'c', text: 'documentwrite("hello")' }, { label: 'd', text: 'alert("hello")' }],
-    correct: 'd',
-  },
-];
+import { apiRequest } from '@/lib/api';
 
 export default function Quiz1Page() {
-  return <div className="max-w-2xl mx-auto"><QuizForm title="Quiz 1 Javascript" subtitle="Tester vos Connaissances en javascript" quizNumber={1} questions={questions} /></div>;
+  const [quizData, setQuizData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchQuiz() {
+      try {
+        const data = await apiRequest('/quiz/1');
+        setQuizData(data);
+      } catch (e) {
+        console.error('Failed to load quiz:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchQuiz();
+  }, []);
+
+  if (loading) return <div className="max-w-2xl mx-auto text-center py-12"><div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full mx-auto" /></div>;
+  if (!quizData) return <div className="max-w-2xl mx-auto text-center py-12 text-red-500">Quiz introuvable</div>;
+
+  return <div className="max-w-2xl mx-auto"><QuizForm title={quizData.title} subtitle={quizData.subtitle} quizNumber={1} questions={quizData.questions} /></div>;
 }

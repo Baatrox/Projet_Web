@@ -13,6 +13,7 @@ export default function ImagesPage() {
   const [showAll, setShowAll] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
 
   async function fetchImages() {
     const res = await fetch('/api/images');
@@ -23,7 +24,8 @@ export default function ImagesPage() {
 
   async function handleUpload() {
     if (!file) {
-      alert('Veuillez sélectionner une image.');
+      setMessage('Veuillez sélectionner une image.');
+      setMessageType('error');
       return;
     }
 
@@ -34,16 +36,19 @@ export default function ImagesPage() {
 
     try {
       const res = await fetch('/api/images', { method: 'POST', body: formData });
+      const data = await res.json();
       if (res.ok) {
         setMessage('Image insérée avec succès !');
+        setMessageType('success');
         setFile(null);
         fetchImages();
       } else {
-        const data = await res.json();
-        alert(data.error || 'Erreur lors de l\'upload');
+        setMessage(data.error || 'Erreur lors de l\'insertion de l\'image.');
+        setMessageType('error');
       }
     } catch {
-      alert('Erreur serveur');
+      setMessage('Erreur serveur');
+      setMessageType('error');
     } finally {
       setUploading(false);
       setTimeout(() => setMessage(''), 3000);
@@ -58,13 +63,17 @@ export default function ImagesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Manipulation d'images avec les bases de données</h1>
+      <h1 className="text-2xl font-bold text-primary">Manipulation d'images avec les bases de donn&#233;es</h1>
 
       <div className="bg-surface rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-6">
-        <h2 className="text-lg font-bold text-primary mb-4">Choix d'une image à insérer :</h2>
+        <h2 className="text-lg font-bold text-primary mb-4">Choix d'une image &#224; ins&#233;rer :</h2>
 
         {message && (
-          <div className="bg-green-100 text-green-700 text-sm rounded-lg px-4 py-3 mb-4">{message}</div>
+          <div className={`rounded-lg px-4 py-3 mb-4 text-sm ${
+            messageType === 'error'
+              ? 'bg-red-100 text-red-700'
+              : 'bg-green-100 text-green-700'
+          }`}>{message}</div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
@@ -91,7 +100,7 @@ export default function ImagesPage() {
         <div className="bg-surface rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-6">
           <h2 className="text-lg font-bold text-primary mb-4">Galerie d'images</h2>
           {images.length === 0 ? (
-            <p className="text-muted text-sm">Aucune image dans la base de données.</p>
+            <p className="text-muted text-sm">Aucune image dans la base de donn&#233;es.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {images.map(img => (
@@ -100,7 +109,7 @@ export default function ImagesPage() {
                     className="w-full h-40 object-cover" />
                   <div className="p-3">
                     <p className="text-xs font-medium text-text truncate">{img.name}</p>
-                    <p className="text-xs text-muted">{img.type.toUpperCase()} — {formatSize(img.size)}</p>
+                    <p className="text-xs text-muted">{img.type.toUpperCase()} &#8212; {formatSize(img.size)}</p>
                     <button onClick={() => handleDelete(img.id)}
                       className="mt-2 text-xs text-accent hover:underline">Supprimer</button>
                   </div>

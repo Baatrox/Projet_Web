@@ -67,17 +67,26 @@ export default function AboutPage() {
       formData.append('image', file);
       formData.append('name', `profile_${student.id}`);
 
-      await fetch('/api/images', { method: 'POST', body: formData });
-      
-      // Refresh images list
-      const res = await fetch('/api/images');
+      const res = await fetch('/api/images', { method: 'POST', body: formData });
       const data = await res.json();
-      const profileImage = data.find(img => img.name === `profile_${student.id}`);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de l'ajout de la photo.");
+      }
+
+      // Refresh images list
+      const imagesRes = await fetch('/api/images');
+      const imagesData = await imagesRes.json();
+      const profileImage = imagesData.find(img => img.name === `profile_${student.id}`);
       if (profileImage) {
         setPhoto(profileImage.dataUrl || `data:image/${profileImage.type};base64,${profileImage.base64}`);
       }
+      
+      // Reset file input so same file can be uploaded again
+      e.target.value = '';
     } catch (error) {
       console.error('Error uploading photo:', error);
+      alert(error.message);
     } finally {
       setUploading(false);
     }

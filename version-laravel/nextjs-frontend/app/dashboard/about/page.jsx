@@ -61,16 +61,24 @@ export default function AboutPage() {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('name', `profile_${student.id}`);
-      await apiRequest('/images', { method: 'POST', body: formData });
-      
+
+      const result = await apiRequest('/images', { method: 'POST', body: formData });
+      if (!result || result.error) {
+        throw new Error(result?.error || "Erreur lors de l'ajout de la photo.");
+      }
+
       // Refresh images list
       const data = await apiRequest('/images');
       const profileImage = data.find(img => img.name === `profile_${student.id}`);
       if (profileImage) {
         setPhoto(profileImage.dataUrl || `data:image/${profileImage.type};base64,${profileImage.base64}`);
       }
+
+      // Reset file input so same file can be uploaded again
+      e.target.value = '';
     } catch (error) {
       console.error('Error uploading photo:', error);
+      alert(error.message);
     } finally {
       setUploading(false);
     }

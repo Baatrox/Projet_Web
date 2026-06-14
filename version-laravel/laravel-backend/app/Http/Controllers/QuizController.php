@@ -48,4 +48,15 @@ class QuizController extends Controller
             return response()->json(['error' => 'Erreur lors de la sauvegarde du score'], 500);
         }
     }
+
+    public function show($quiz)
+    {
+        $data = QuizService::getQuizQuestions((int) $quiz);
+
+        if (!$data) {
+            return response()->json(['error' => 'Quiz introuvable'], 404);
+        }
+
+        return response()->json($data);
+    }
 }

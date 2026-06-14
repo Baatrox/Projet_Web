@@ -5,12 +5,15 @@ import { useState } from 'react';
 export default function QuizForm({ title, subtitle, quizNumber, questions }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
 
   function handleSelect(qIndex, value) {
     setAnswers(prev => ({ ...prev, [qIndex]: value }));
   }
 
   async function handleSubmit() {
+    setError('');
     try {
       const response = await fetch('/api/quiz/submit', {
         method: 'POST',
@@ -18,25 +21,30 @@ export default function QuizForm({ title, subtitle, quizNumber, questions }) {
         body: JSON.stringify({ quiz: quizNumber, answers }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to submit quiz');
+        throw new Error(data.error || 'Erreur lors de la soumission du quiz');
       }
 
-      const data = await response.json();
-      alert(`Votre note est : ${data.score}/20 (${data.correct}/${data.total} bonnes réponses)`);
+      setResult(data);
       setSubmitted(true);
     } catch (error) {
       console.error('Failed to submit quiz:', error);
-      alert('Erreur lors de la soumission du quiz');
+      setError(error.message || 'Erreur lors de la soumission du quiz');
     }
   }
 
-  if (submitted) {
+  if (submitted && result) {
     return (
       <div className="bg-surface rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-8 text-center">
         <div className="text-5xl mb-4">🎉</div>
         <h2 className="text-xl font-bold text-primary mb-2">Quiz terminé !</h2>
-        <p className="text-muted">Votre note a été enregistrée.</p>
+        <p className="text-lg text-text mt-4">
+          Votre note : <strong className="text-accent">{result.score}/20</strong>
+        </p>
+        <p className="text-muted mt-2">{result.correct}/{result.total} bonnes r&eacute;ponses.</p>
+        <p className="text-muted text-sm mt-4">Votre note a &eacute;t&eacute; enregistr&eacute;e.</p>
       </div>
     );
   }
@@ -47,6 +55,12 @@ export default function QuizForm({ title, subtitle, quizNumber, questions }) {
         <h1 className="text-2xl font-bold text-primary">{title}</h1>
         <p className="text-muted text-sm mt-1">{subtitle}</p>
       </div>
+
+      {error && (
+        <div className="bg-red-100 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+          {error}
+        </div>
+      )}
 
       <div className="space-y-8">
         {questions.map((q, qIndex) => (

@@ -1,25 +1,29 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import QuizForm from '@/components/QuizForm';
-
-const questions = [
-  {
-    question: 'Que signifie PHP ?',
-    options: [{ label: 'a', text: 'Page Helper Process' }, { label: 'b', text: 'Programming Home Pages' }, { label: 'c', text: 'PHP: Hypertext Preprocessor' }],
-    correct: 'c',
-  },
-  {
-    question: 'Quelle fonction retourne la longueur d\'une chaine de texte ?',
-    options: [{ label: 'a', text: 'strlen' }, { label: 'b', text: 'strlength' }, { label: 'c', text: 'length' }, { label: 'd', text: 'substr' }],
-    correct: 'a',
-  },
-  {
-    question: 'Sachant que $num = 6. Quelle est la valeur de : $num += 2 ?',
-    options: [{ label: 'a', text: '3' }, { label: 'b', text: '8' }, { label: 'c', text: '10' }, { label: 'd', text: '12' }],
-    correct: 'b',
-  },
-];
+import { apiRequest } from '@/lib/api';
 
 export default function Quiz2Page() {
-  return <div className="max-w-2xl mx-auto"><QuizForm title="Quiz 2 PHP" subtitle="Tester vos Connaissances en PHP" quizNumber={2} questions={questions} /></div>;
+  const [quizData, setQuizData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchQuiz() {
+      try {
+        const data = await apiRequest('/quiz/2');
+        setQuizData(data);
+      } catch (e) {
+        console.error('Failed to load quiz:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchQuiz();
+  }, []);
+
+  if (loading) return <div className="max-w-2xl mx-auto text-center py-12"><div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full mx-auto" /></div>;
+  if (!quizData) return <div className="max-w-2xl mx-auto text-center py-12 text-red-500">Quiz introuvable</div>;
+
+  return <div className="max-w-2xl mx-auto"><QuizForm title={quizData.title} subtitle={quizData.subtitle} quizNumber={2} questions={quizData.questions} /></div>;
 }

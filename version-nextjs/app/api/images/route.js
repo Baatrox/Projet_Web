@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import pool from '@/lib/db';
 
+function normalizeImageName(input, fallback = 'image') {
+  const raw = String(input || fallback)
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return (raw || fallback).slice(0, 20);
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session) {
@@ -46,7 +56,7 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get('image');
-    const name = formData.get('name') || file.name;
+    const rawName = formData.get('name') || file.name;
 
     if (!file) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
@@ -63,17 +73,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Type de fichier non autorisé' }, { status: 400 });
     }
 
+    const name = normalizeImageName(rawName);
     const buffer = Buffer.from(await file.arrayBuffer());
     const ext = file.name.split('.').pop() || 'jpg';
+
+    // For profile photos, delete existing one first to avoid duplicates
+    if (name.startsWith('profile_')) {
+      await pool.execute('DELETE FROM images WHERE name = ?', [name]);
+    }
 
     const [result] = await pool.execute(
       'INSERT INTO images (name, type, size, bin_img) VALUES (?, ?, ?, ?)',
       [name, ext.toLowerCase(), file.size, buffer]
     );
 
-    return NextResponse.json({ success: true, id: result.insertId });
+    return NextResponse.json({ success: true, id: result.insertId, name });
   } catch (error) {
     console.error('Error uploading image:', error);
+    if (error.code === 'ER_DATA_TOO_LONG') {
+      return NextResponse.json(
+        { error: "Nom d'image trop long. Le nom a été réduit automatiquement ou doit faire moins de 20 caractères." },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
