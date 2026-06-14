@@ -5,12 +5,21 @@ import { useEffect, useRef } from 'react';
 export default function GeoMap({ students, onPositionUpdate }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const markersRef = useRef(null);
 
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    if (mapInstanceRef.current || !mapRef.current) return;
 
     async function initMap() {
       const L = (await import('leaflet')).default;
+
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      });
+
       const map = L.map(mapRef.current, {
         center: [31.7917, -7.0926],
         zoom: 6,
@@ -19,21 +28,45 @@ export default function GeoMap({ students, onPositionUpdate }) {
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19,
       }).addTo(map);
 
-      students.forEach(s => {
-        if (s.longitude && s.latitude) {
-          L.marker([s.latitude, s.longitude]).addTo(map)
-            .bindPopup(`<b>${s.nom}</b><br/>Moyenne: ${s.moyenne.toFixed(1)}/20`);
-        }
-      });
+      markersRef.current = L.layerGroup().addTo(map);
 
       mapInstanceRef.current = map;
     }
 
     initMap();
-    return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
+  }, []);
+
+  useEffect(() => {
+    if (!markersRef.current) return;
+
+    async function updateMarkers() {
+      const L = (await import('leaflet')).default;
+
+      markersRef.current.clearLayers();
+
+      students.forEach(s => {
+        if (s.longitude && s.latitude) {
+          L.marker([s.latitude, s.longitude])
+            .bindPopup(`<b>${s.nom}</b><br/>Moyenne: ${s.moyenne.toFixed(1)}/20`)
+            .addTo(markersRef.current);
+        }
+      });
+    }
+
+    updateMarkers();
   }, [students]);
+
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
 
   function handleUseMyPosition() {
     if (!navigator.geolocation) {
