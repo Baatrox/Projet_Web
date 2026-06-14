@@ -25,7 +25,7 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=master_rsi
 DB_USERNAME=root
-DB_PASSWORD=PROGEEK2m!
+DB_PASSWORD=your_mysql_password
 ```
 
 ### 3. Setup database

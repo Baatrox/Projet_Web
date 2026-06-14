@@ -46,9 +46,9 @@ export default function ImagesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Manipulation d'images avec les bases de données</h1>
+      <h1 className="text-2xl font-bold text-primary">Manipulation d&#39;images avec les bases de donn&#233;es</h1>
       <div className="bg-surface rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-6">
-        <h2 className="text-lg font-bold text-primary mb-4">Choix d'une image à insérer :</h2>
+        <h2 className="text-lg font-bold text-primary mb-4">Choix d&#39;une image &#224; ins&#233;rer :</h2>
         {message && <div className="bg-green-100 text-green-700 text-sm rounded-lg px-4 py-3 mb-4">{message}</div>}
         <div className="flex flex-col sm:flex-row gap-4">
           <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)}
