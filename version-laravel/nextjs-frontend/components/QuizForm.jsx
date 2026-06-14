@@ -12,24 +12,23 @@ export default function QuizForm({ title, subtitle, quizNumber, questions }) {
   }
 
   async function handleSubmit() {
-    let correct = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) correct++;
-    });
-
-    const scoreOutOf20 = Math.round((correct / questions.length) * 20);
-    alert(`Votre note est : ${scoreOutOf20}/20`);
-
     try {
-      await apiRequest('/quiz/submit', {
+      const response = await apiRequest('/quiz/submit', {
         method: 'POST',
-        body: JSON.stringify({ quiz: quizNumber, score: scoreOutOf20 }),
+        body: JSON.stringify({ quiz: quizNumber, answers }),
       });
-    } catch {
-      console.error('Failed to submit quiz score');
-    }
 
-    setSubmitted(true);
+      if (!response.ok) {
+        throw new Error('Failed to submit quiz');
+      }
+
+      const data = await response.json();
+      alert(`Votre note est : ${data.score}/20 (${data.correct}/${data.total} bonnes réponses)`);
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      alert('Erreur lors de la soumission du quiz');
+    }
   }
 
   if (submitted) {

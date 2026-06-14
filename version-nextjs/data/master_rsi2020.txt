@@ -1,6 +1,6 @@
-CNE123456|Ahmed|Ali|15|16|14
-CNE789012|Sara|Benali|12|13|11
-CNE345678|Anouar|Idrissi|10|11|9
-CNE901234|Amine|Ouazzani|15|13|12
-CNE567890|Badr|El Amrani|16|15|14
-oppa|Saad|ADDAR|14|20|20
+CNE;Nom;Prenom;Module1;Module2;Module3;Moyenne
+M123456;Ahmed;Baatrox;15;16;14;15
+M123457;Sara;Adama;12;13;11;12
+M123458;Anouar;Ali;10;11;9;10
+M123459;Amine;Hassan;15;13;14;14
+M123460;Badr;Mohamed;16;15;14;15

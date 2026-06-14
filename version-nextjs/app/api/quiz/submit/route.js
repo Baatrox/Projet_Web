@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import pool from '@/lib/db';
+import { calculateQuizScore } from '@/lib/quizService';
 
 export async function POST(request) {
   const session = await getSession();
@@ -9,21 +10,23 @@ export async function POST(request) {
   }
 
   try {
-    const { quiz, score } = await request.json();
+    const { quiz, answers } = await request.json();
 
     // Validate quiz number
     if (!quiz || ![1, 2].includes(quiz)) {
       return NextResponse.json({ error: 'Quiz invalide. Doit être 1 ou 2' }, { status: 400 });
     }
 
-    // Validate score
-    if (score === undefined || score === null) {
-      return NextResponse.json({ error: 'Score requis' }, { status: 400 });
-    }
-    if (typeof score !== 'number' || score < 0 || score > 20) {
-      return NextResponse.json({ error: 'Score doit être un nombre entre 0 et 20' }, { status: 400 });
+    // Validate answers object
+    if (!answers || typeof answers !== 'object') {
+      return NextResponse.json({ error: 'Réponses requises' }, { status: 400 });
     }
 
+    // Calculate score on server (student cannot cheat)
+    const result = calculateQuizScore(quiz, answers);
+    const score = result.score;
+
+    // Update database with calculated score
     if (quiz === 1) {
       await pool.execute(
         'UPDATE etudiants SET note1 = ?, moyenne = (note1 + note2) / 2.0 WHERE id = ?',
@@ -36,7 +39,12 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json({ success: true, score });
+    return NextResponse.json({ 
+      success: true, 
+      score,
+      correct: result.correct,
+      total: result.total,
+    });
   } catch (error) {
     console.error('Error submitting quiz:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
