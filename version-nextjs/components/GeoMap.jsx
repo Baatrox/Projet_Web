@@ -49,12 +49,26 @@ export default function GeoMap({ students, onPositionUpdate }) {
 
       markersRef.current.clearLayers();
 
+      const groups = {};
       students.forEach(s => {
         if (s.longitude && s.latitude) {
-          L.marker([s.latitude, s.longitude])
-            .bindPopup(`<b>${s.nom}</b><br/>Moyenne: ${s.moyenne.toFixed(1)}/20`)
-            .addTo(markersRef.current);
+          const key = `${s.latitude},${s.longitude}`;
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(s);
         }
+      });
+
+      Object.values(groups).forEach(group => {
+        const s = group[0];
+        const popupContent = group.length === 1
+          ? `<b>${s.nom}</b><br/>Moyenne: ${s.moyenne.toFixed(1)}/20`
+          : `<b>${group.length} étudiants</b><br/>` + group.map(g =>
+              `${g.nom} — Moyenne: ${g.moyenne.toFixed(1)}/20`
+            ).join('<br/>');
+
+        L.marker([s.latitude, s.longitude])
+          .bindPopup(popupContent)
+          .addTo(markersRef.current);
       });
     }
 
